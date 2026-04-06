@@ -1,0 +1,19 @@
+services:
+  api:
+    build: ./api
+    volumes:
+      - documents:/app/documents
+    ports:
+      - "8000:8000"
+    user: root
+
+  ocr:
+    build: ./ocr
+    user: root
+    volumes:
+      - documents:/app/documents
+    depends_on:
+      - api
+
+volumes:
+  documents:

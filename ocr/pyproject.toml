@@ -1,0 +1,122 @@
+[project]
+name = "ocr-pipeline"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "loguru>=0.7.3",
+    "numpy>=2.4.4",
+    "pillow>=12.2.0",
+    "tesserocr>=2.10.0",
+    "pymupdf>=1.27.2.2",
+    "opencv-python-headless>=4.13.0.92",
+    "python-dotenv>=1.2.2",
+    "httpx>=0.28.1",
+    "watchdog>=6.0.0",
+]
+
+[dependency-groups]
+dev = ["ruff", "poethepoet", "pyrefly", "radon", "skylos"]
+
+
+[tool.poe.tasks]
+fmt = [
+    { cmd = "ruff format ." },
+    { cmd = "ruff check . --fix" },
+    { cmd = "pyrefly check ." },
+]
+
+metrics = [
+    { cmd = "skylos . --quality --danger" },
+    { cmd = "radon cc . -a -nb" },
+    { cmd = "radon mi . -nb" },
+]
+
+c = { cmd = "uv run collect_code.py" }
+
+# ============================================================
+# RUFF CONFIGURATION - MAXIMUM STRICTNESS
+# ============================================================
+[tool.ruff]
+target-version = "py314"
+line-length = 120
+indent-width = 4
+fix = true
+show-fixes = true
+preview = true           # Enable preview rules (PLR1702, etc.)
+
+[tool.ruff.lint]
+# Comprehensive rule set for strict checking
+select = [
+    "E",     # pycodestyle errors
+    "F",     # pyflakes
+    "I",     # isort
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "BLE",   # flake8-blind-except (no bare except:)
+    "C4",    # flake8-comprehensions
+    "C90",   # mccabe complexity
+    "T20",   # flake8-print (no print statements)
+    "SIM",   # flake8-simplify
+    "N",     # pep8-naming
+    "Q",     # flake8-quotes
+    "RUF",   # Ruff-specific rules
+    "ASYNC", # flake8-async
+    "S",     # flake8-bandit (security)
+    "PTH",   # flake8-use-pathlib
+    "ERA",   # eradicate (commented-out code)
+    "PL",    # pylint (includes PLR1702: too-many-nested-blocks)
+    "PERF",  # perflint (performance)
+    "ANN",   # flake8-annotations
+    "ARG",   # flake8-unused-arguments
+    "FBT",   # flake8-boolean-trap (no boolean positional args)
+    "RET",   # flake8-return
+    "TCH",   # flake8-type-checking
+]
+
+ignore = [
+    "E501",  # Line too long (formatter handles this)
+    "S603",  # subprocess without shell=True (too strict)
+    "S607",  # Starting a process with a partial path (too strict)
+    "TC001",
+    "TC002",
+    "TC003",
+
+]
+
+# Complexity limits (anti-LLM-slop)
+[tool.ruff.lint.mccabe]
+max-complexity = 10 # Maximum cyclomatic complexity
+
+# Per-file ignores
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = [
+    "F401", # Allow unused imports in __init__.py
+]
+"tests/**/*.py" = [
+    "S101",    # Allow assert in tests
+    "PLR2004", # Allow magic values in tests
+    "ANN",     # Don't require annotations in tests
+    "FBT",     # Allow boolean args in tests
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]       # CHANGE THIS
+combine-as-imports = true
+force-sort-within-sections = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.flake8-type-checking]
+strict = true
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
