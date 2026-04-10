@@ -23,27 +23,37 @@
           (onClick)="panelDataResource.reload()"
         />
       </div>
-    } @else if (!contratos().length) {
+    } @else if (!contratoRows().length) {
       <span class="col-empty">Nenhum contrato disponível.</span>
     } @else {
       <ul class="item-list" role="radiogroup">
-        @for (contrato of contratos(); track contrato.numero_contrato) {
+        @for (row of contratoRows(); track row.item.numero_contrato) {
+          @if (row.groupBreak) {
+            <li class="group-divider" aria-hidden="true"></li>
+          }
           <li class="item-row">
             <p-radioButton
-              [value]="contrato.numero_contrato"
+              [value]="row.item.numero_contrato"
               [ngModel]="selectedContrato()"
               (ngModelChange)="selectedContrato.set($event)"
-              [inputId]="panelId() + '-c-' + contrato.numero_contrato"
+              [inputId]="panelId() + '-c-' + row.item.numero_contrato"
             />
             <label
-              [for]="panelId() + '-c-' + contrato.numero_contrato"
+              [for]="panelId() + '-c-' + row.item.numero_contrato"
               class="item-label"
             >
-              <span class="item-numero">{{ contrato.numero_contrato }}</span>
-              @if (contrato.descricao) {
-                <span class="item-desc">{{ contrato.descricao }}</span>
+              <span class="item-numero">{{ row.item.numero_contrato }}</span>
+              @if (row.item.descricao) {
+                <span class="item-desc">{{ row.item.descricao }}</span>
               }
             </label>
+            @if (row.item.numeros_processo.length) {
+              <span
+                class="process-bar process-bar--right"
+                [style]="contratoBarStyle(row.item.numeros_processo)"
+                [title]="row.item.numeros_processo.join(', ')"
+              ></span>
+            }
           </li>
         }
       </ul>
@@ -64,26 +74,34 @@
         <p-skeleton height="2.25rem" styleClass="mb-2" borderRadius="6px" />
       }
     } @else if (panelDataResource.error()) {
-      <!-- Error already shown on the left; right stays blank to avoid duplication -->
-    } @else if (!declaracoes().length) {
+      <!-- Error shown on the left; right stays blank -->
+    } @else if (!declaracaoRows().length) {
       <span class="col-empty">Nenhuma declaração disponível.</span>
     } @else {
       <ul class="item-list">
-        @for (decl of declaracoes(); track decl.numero_declaracao) {
+        @for (row of declaracaoRows(); track row.item.numero_declaracao) {
+          @if (row.groupBreak) {
+            <li class="group-divider" aria-hidden="true"></li>
+          }
           <li class="item-row">
+            <span
+              class="process-bar process-bar--left"
+              [style.background]="processoColor(row.item.numero_processo)"
+              [title]="row.item.numero_processo"
+            ></span>
             <p-checkbox
-              [value]="decl.numero_declaracao"
+              [value]="row.item.numero_declaracao"
               [ngModel]="selectedDeclaracoes()"
               (ngModelChange)="selectedDeclaracoes.set($event)"
-              [inputId]="panelId() + '-d-' + decl.numero_declaracao"
+              [inputId]="panelId() + '-d-' + row.item.numero_declaracao"
             />
             <label
-              [for]="panelId() + '-d-' + decl.numero_declaracao"
+              [for]="panelId() + '-d-' + row.item.numero_declaracao"
               class="item-label"
             >
-              <span class="item-numero">{{ decl.numero_declaracao }}</span>
-              @if (decl.descricao) {
-                <span class="item-desc">{{ decl.descricao }}</span>
+              <span class="item-numero">{{ row.item.numero_declaracao }}</span>
+              @if (row.item.descricao) {
+                <span class="item-desc">{{ row.item.descricao }}</span>
               }
             </label>
             <p-button
@@ -94,8 +112,8 @@
               size="small"
               pTooltip="Descartar declaração"
               tooltipPosition="left"
-              [ariaLabel]="'Descartar ' + decl.numero_declaracao"
-              (onClick)="descartar(decl.numero_declaracao)"
+              [ariaLabel]="'Descartar ' + row.item.numero_declaracao"
+              (onClick)="descartar(row.item.numero_declaracao)"
             />
           </li>
         }

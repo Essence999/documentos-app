@@ -15,6 +15,32 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ApiService } from '../../services/docs-api.service';
+import { Contrato, Declaracao } from '../../models/docs';
+
+// ── Process colour palette (up to 10 distinct processes) ───────────────────
+const PROCESS_COLORS = [
+  '#3b82f6', // blue
+  '#f97316', // orange
+  '#22c55e', // green
+  '#ef4444', // red
+  '#a855f7', // purple
+  '#eab308', // yellow
+  '#06b6d4', // cyan
+  '#ec4899', // pink
+  '#84cc16', // lime
+  '#14b8a6', // teal
+] as const;
+
+// ── Enriched row types (add group-break flag without touching the model) ────
+interface ContratoRow {
+  item: Contrato;
+  groupBreak: boolean; // true → render a divider before this row
+}
+
+interface DeclaracaoRow {
+  item: Declaracao;
+  groupBreak: boolean;
+}
 
 @Component({
   selector: 'app-panel-content',
@@ -51,24 +77,83 @@ export class PanelContentComponent {
       this.selectedDeclaracoes().length > 0,
   );
 
-  // ── Resources ────────────────────────────────────────────────────────────
+  // ── Resource ─────────────────────────────────────────────────────────────
   readonly panelDataResource = rxResource({
     request: () => this.panelId(),
     loader: ({ request: id }) => this.api.getPanelData(id),
   });
 
-  readonly contratos = computed(
-    () => this.panelDataResource.value()?.contratos ?? [],
-  );
-  readonly declaracoes = computed(
-    () => this.panelDataResource.value()?.declaracoes ?? [],
-  );
+  // ── Process → colour mapping ──────────────────────────────────────────────
+  /**
+   * Collects every unique processo ID that appears in this panel (from both
+   * contratos and declarações), sorts them for a stable assignment, then maps
+   * each to a colour from the fixed palette. Index wraps at 10.
+   */
+  private readonly processoColorMap = computed<Map<string, string>>(() => {
+    const data = this.panelDataResource.value();
+    if (!data) return new Map();
+
+    const ids = new Set<string>();
+    data.contratos.forEach((c) =>
+      c.numeros_processo.forEach((p) => ids.add(p)),
+    );
+    data.declaracoes.forEach((d) => ids.add(d.numero_processo));
+
+    return new Map(
+      [...ids]
+        .sort()
+        .map((id, i) => [id, PROCESS_COLORS[i % PROCESS_COLORS.length]]),
+    );
+  });
+
+  // ── Enriched row arrays ───────────────────────────────────────────────────
+  readonly contratoRows = computed<ContratoRow[]>(() => {
+    const items = this.panelDataResource.value()?.contratos ?? [];
+    let prevKey = '';
+    return items.map((item, i) => {
+      // Group key = first processo (API sorts by min processo already)
+      const key = item.numeros_processo[0] ?? '';
+      const groupBreak = i > 0 && key !== prevKey;
+      prevKey = key;
+      return { item, groupBreak };
+    });
+  });
+
+  readonly declaracaoRows = computed<DeclaracaoRow[]>(() => {
+    const items = this.panelDataResource.value()?.declaracoes ?? [];
+    let prevProcesso = '';
+    return items.map((item, i) => {
+      const groupBreak = i > 0 && item.numero_processo !== prevProcesso;
+      prevProcesso = item.numero_processo;
+      return { item, groupBreak };
+    });
+  });
+
+  // ── Colour helpers ────────────────────────────────────────────────────────
+  /**
+   * Hard-stop linear gradient for multi-process contratos.
+   * Single process → plain background.
+   */
+  contratoBarStyle(numeros: string[]): string {
+    const colors = numeros.map(
+      (n) => this.processoColorMap().get(n) ?? '#94a3b8',
+    );
+    if (colors.length === 1) return `background: ${colors[0]}`;
+    const step = 100 / colors.length;
+    const stops = colors
+      .map((c, i) => `${c} ${i * step}% ${(i + 1) * step}%`)
+      .join(', ');
+    return `background: linear-gradient(to bottom, ${stops})`;
+  }
+
+  processoColor(numero: string): string {
+    return this.processoColorMap().get(numero) ?? '#94a3b8';
+  }
 
   // ── Actions ──────────────────────────────────────────────────────────────
   confirmar(): void {
     const numero_contrato = this.selectedContrato();
     const numeros_declaracao = this.selectedDeclaracoes();
-
     if (!numero_contrato || !numeros_declaracao.length) return;
 
     const count = numeros_declaracao.length;
@@ -118,7 +203,6 @@ export class PanelContentComponent {
 
   descartar(numero: string): void {
     this.confirmationService.confirm({
-      // Use [innerHTML] via acceptIcon trick: escape the numero in message
       message: `Deseja realmente descartar a declaração <strong>${numero}</strong>?<br>Esta ação não pode ser desfeita.`,
       header: 'Confirmar Descarte',
       icon: 'pi pi-exclamation-triangle',
@@ -133,11 +217,9 @@ export class PanelContentComponent {
   private executeDescartar(numero: string): void {
     this.api.descartarDeclaracao(numero).subscribe({
       next: () => {
-        // Remove from selection if it was selected
         this.selectedDeclaracoes.update((prev) =>
           prev.filter((n) => n !== numero),
         );
-        // Reload the panel data to reflect the discard
         this.panelDataResource.reload();
         this.messageService.add({
           severity: 'success',

@@ -11,13 +11,16 @@ export interface PaginatedResponse<T> {
 export interface Contrato {
   numero_contrato: string;
   descricao?: string;
+  numeros_processo: string[];
 }
 
 export interface Declaracao {
   numero_declaracao: string;
   descricao?: string;
+  numero_processo: string;
 }
 
+/** Single response returned by GET /panels/:id */
 export interface PanelData {
   contratos: Contrato[];
   declaracoes: Declaracao[];
