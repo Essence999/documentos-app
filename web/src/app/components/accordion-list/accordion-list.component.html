@@ -1,0 +1,76 @@
+<p-toast position="top-right" />
+<p-confirmDialog [style]="{ width: '28rem' }" [baseZIndex]="1100">
+  <ng-template #message let-msg>
+    <span [innerHTML]="msg.message"></span>
+  </ng-template>
+</p-confirmDialog>
+
+<div class="list-header">
+  <h2 class="list-title">Contratos & Declarações</h2>
+  @if (!panelsResource.isLoading() && !panelsResource.error()) {
+    <span class="list-count">
+      {{ panelsResource.value()?.total ?? 0 }} painel(s)
+    </span>
+  }
+</div>
+
+<!-- ── Loading ── -->
+@if (panelsResource.isLoading()) {
+  <div class="skeleton-list">
+    @for (_ of skeletonRows(); track $index) {
+      <p-skeleton height="3.5rem" styleClass="mb-2" borderRadius="8px" />
+    }
+  </div>
+}
+
+<!-- ── Error ── -->
+@else if (panelsResource.error()) {
+  <div class="error-state">
+    <i class="pi pi-times-circle"></i>
+    <span>Não foi possível carregar os painéis.</span>
+    <p-button
+      label="Tentar novamente"
+      icon="pi pi-refresh"
+      [text]="true"
+      (onClick)="panelsResource.reload()"
+    />
+  </div>
+}
+
+<!-- ── Empty ── -->
+@else if (!panelsResource.value()?.items?.length) {
+  <div class="empty-state">
+    <i class="pi pi-inbox"></i>
+    <span>Nenhum painel disponível.</span>
+  </div>
+}
+
+<!-- ── Accordion ── -->
+@else {
+  <p-accordion
+    [multiple]="true"
+    [value]="openValues()"
+    (valueChange)="onValueChange($event)"
+  >
+    @for (panel of panelsResource.value()!.items; track panel.id) {
+      <p-accordion-panel [value]="panel.id">
+        <p-accordion-header>
+          <span class="panel-header-text">{{ panel.label }}</span>
+        </p-accordion-header>
+        <p-accordion-content>
+          @if (openValues().includes(panel.id)) {
+            <app-panel-content [panelId]="panel.id" />
+          }
+        </p-accordion-content>
+      </p-accordion-panel>
+    }
+  </p-accordion>
+
+  <p-paginator
+    [first]="first()"
+    [rows]="pageSize()"
+    [totalRecords]="panelsResource.value()!.total"
+    [rowsPerPageOptions]="PAGE_SIZE_OPTIONS"
+    (onPageChange)="onPageChange($event)"
+  />
+}

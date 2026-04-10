@@ -1,0 +1,123 @@
+<div class="panel-grid">
+  <!-- ── Left: Contratos (RadioButtons) ── -->
+  <section class="panel-col" aria-label="Contratos">
+    <header class="col-header">
+      <span class="col-title">Contratos</span>
+      @if (panelDataResource.isLoading()) {
+        <i class="pi pi-spin pi-spinner col-spinner"></i>
+      }
+    </header>
+
+    @if (panelDataResource.isLoading()) {
+      @for (_ of SKELETON_ROWS; track $index) {
+        <p-skeleton height="2.25rem" styleClass="mb-2" borderRadius="6px" />
+      }
+    } @else if (panelDataResource.error()) {
+      <div class="col-error">
+        <i class="pi pi-exclamation-circle"></i>
+        <span>Erro ao carregar dados.</span>
+        <p-button
+          label="Tentar novamente"
+          [text]="true"
+          size="small"
+          (onClick)="panelDataResource.reload()"
+        />
+      </div>
+    } @else if (!contratos().length) {
+      <span class="col-empty">Nenhum contrato disponível.</span>
+    } @else {
+      <ul class="item-list" role="radiogroup">
+        @for (contrato of contratos(); track contrato.numero_contrato) {
+          <li class="item-row">
+            <p-radioButton
+              [value]="contrato.numero_contrato"
+              [ngModel]="selectedContrato()"
+              (ngModelChange)="selectedContrato.set($event)"
+              [inputId]="panelId() + '-c-' + contrato.numero_contrato"
+            />
+            <label
+              [for]="panelId() + '-c-' + contrato.numero_contrato"
+              class="item-label"
+            >
+              <span class="item-numero">{{ contrato.numero_contrato }}</span>
+              @if (contrato.descricao) {
+                <span class="item-desc">{{ contrato.descricao }}</span>
+              }
+            </label>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <!-- ── Right: Declarações (Checkboxes) ── -->
+  <section class="panel-col" aria-label="Declarações">
+    <header class="col-header">
+      <span class="col-title">Declarações</span>
+      @if (panelDataResource.isLoading()) {
+        <i class="pi pi-spin pi-spinner col-spinner"></i>
+      }
+    </header>
+
+    @if (panelDataResource.isLoading()) {
+      @for (_ of SKELETON_ROWS; track $index) {
+        <p-skeleton height="2.25rem" styleClass="mb-2" borderRadius="6px" />
+      }
+    } @else if (panelDataResource.error()) {
+      <!-- Error already shown on the left; right stays blank to avoid duplication -->
+    } @else if (!declaracoes().length) {
+      <span class="col-empty">Nenhuma declaração disponível.</span>
+    } @else {
+      <ul class="item-list">
+        @for (decl of declaracoes(); track decl.numero_declaracao) {
+          <li class="item-row">
+            <p-checkbox
+              [value]="decl.numero_declaracao"
+              [ngModel]="selectedDeclaracoes()"
+              (ngModelChange)="selectedDeclaracoes.set($event)"
+              [inputId]="panelId() + '-d-' + decl.numero_declaracao"
+            />
+            <label
+              [for]="panelId() + '-d-' + decl.numero_declaracao"
+              class="item-label"
+            >
+              <span class="item-numero">{{ decl.numero_declaracao }}</span>
+              @if (decl.descricao) {
+                <span class="item-desc">{{ decl.descricao }}</span>
+              }
+            </label>
+            <p-button
+              icon="pi pi-trash"
+              severity="danger"
+              [text]="true"
+              [rounded]="true"
+              size="small"
+              pTooltip="Descartar declaração"
+              tooltipPosition="left"
+              [ariaLabel]="'Descartar ' + decl.numero_declaracao"
+              (onClick)="descartar(decl.numero_declaracao)"
+            />
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</div>
+
+<!-- ── Footer ── -->
+<footer class="panel-footer">
+  <span class="confirm-hint">
+    @if (!selectedContrato()) {
+      Selecione um contrato
+    } @else if (!selectedDeclaracoes().length) {
+      Selecione ao menos uma declaração
+    }
+  </span>
+  <p-button
+    label="Confirmar"
+    icon="pi pi-check"
+    [disabled]="!canConfirm()"
+    [loading]="confirming()"
+    (onClick)="confirmar()"
+  />
+</footer>

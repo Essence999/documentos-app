@@ -1,0 +1,58 @@
+:host {
+  display: block;
+  margin: 0 auto;
+  padding: 1.5rem;
+  font-family: var(--font-family);
+}
+
+.list-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.list-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.list-count {
+  font-size: 0.8125rem;
+  color: var(--text-color-secondary);
+}
+
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.error-state,
+.empty-state {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2rem 1rem;
+  border-radius: 8px;
+  border: 1px dashed var(--surface-border);
+  color: var(--text-color-secondary);
+}
+
+.error-state {
+  color: var(--red-500);
+  border-color: var(--red-200);
+}
+
+.error-state i,
+.empty-state i {
+  font-size: 1.25rem;
+}
+
+.panel-header-text {
+  font-weight: 500;
+}
+
+p-paginator {
+  margin-top: 1rem;
+}
